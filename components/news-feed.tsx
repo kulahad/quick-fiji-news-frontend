@@ -157,13 +157,13 @@ export default function NewsFeed({
                       {formatDate(item.pubDate)}
                     </time>
                   </div>{" "}
-                  {/* <Separator orientation="vertical" className="h-4" />{" "} */}
-                  {/* <div className="flex items-center gap-2">
+                  <Separator orientation="vertical" className="h-4" />{" "}
+                  <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1.5">
                       <span className="font-medium bg-muted/50 px-2 py-1 rounded-md">
                         {formatSource(item.source)}
                       </span>
-                      {item.volume && (
+                      {/* {item.volume && (
                         <Badge
                           variant="outline"
                           className="text-[10px] font-mono bg-muted/30 hover:bg-muted/30"
@@ -171,9 +171,9 @@ export default function NewsFeed({
                         >
                           {formatVolumeInfo(item.volume)}
                         </Badge>
-                      )}
+                      )} */}
                     </div>
-                  </div> */}
+                  </div>
                   {item.categories?.length > 0 && (
                     <>
                       <Separator orientation="vertical" className="h-4" />
