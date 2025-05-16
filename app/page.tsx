@@ -14,7 +14,7 @@ export default function Home() {
     month: "long",
     day: "numeric",
   };
-  const formattedDate = today.toLocaleDateString("en-US", options);
+  const formattedDate = today.toLocaleDateString("en-FJ", options);
 
   return (
     <div className="min-h-screen bg-background">
@@ -52,7 +52,7 @@ export default function Home() {
             <h2 className="font-heading text-3xl">Top Stories</h2>
           </div>
           <Tabs defaultValue="all" className="space-y-6">
-            <TabsList className="bg-transparent h-auto p-0 mb-4">
+            <TabsList className="bg-transparent h-auto p-0 mb-4 flex-wrap">
               <TabsTrigger
                 value="all"
                 className="font-heading text-base data-[state=active]:bg-transparent data-[state=active]:border-b-2 data-[state=active]:border-black dark:data-[state=active]:border-white data-[state=active]:shadow-none rounded-none"

@@ -19,7 +19,6 @@ export const metadata: Metadata = {
   title: "Quick Fiji News - News from Multiple Sources",
   description:
     "Stay informed with the latest news from Fiji and around the world",
-  generator: "v0.dev",
 };
 
 export default function RootLayout({
