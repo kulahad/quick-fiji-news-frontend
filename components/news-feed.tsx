@@ -1,238 +1,129 @@
-"use client"
-import Image from "next/image"
-import { Clock, ExternalLink } from "lucide-react"
+"use client";
+import Image from "next/image";
+import { Clock, ExternalLink, Loader2 } from "lucide-react";
 
-import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { useNews } from "@/hooks/use-news";
+import { stripHtml, truncateText } from "@/lib/textUtils";
+import { NewsCategory } from "@/types/news";
 
-// Mock data for news articles
-const mockNewsData = {
-  all: [
-    {
-      id: 1,
-      title: "SpaceX Successfully Launches Starship for Orbital Test Flight",
-      summary:
-        "SpaceX's Starship rocket completed its first successful orbital test flight, marking a significant milestone for space exploration.",
-      source: "Space News",
-      sourceIcon: "SN",
-      category: "technology",
-      publishedAt: "2 hours ago",
-      imageUrl: "/placeholder.svg?height=200&width=300",
-      likes: 245,
-      comments: 89,
-    },
-    {
-      id: 2,
-      title: "Global Markets React to New Economic Policies",
-      summary:
-        "Stock markets worldwide showed mixed reactions as new economic policies were announced by major economies.",
-      source: "Financial Times",
-      sourceIcon: "FT",
-      category: "business",
-      publishedAt: "4 hours ago",
-      imageUrl: "/placeholder.svg?height=200&width=300",
-      likes: 132,
-      comments: 47,
-    },
-    {
-      id: 3,
-      title: "Breakthrough in Renewable Energy Storage Technology",
-      summary:
-        "Scientists have developed a new battery technology that could revolutionize how renewable energy is stored and distributed.",
-      source: "Science Daily",
-      sourceIcon: "SD",
-      category: "science",
-      publishedAt: "6 hours ago",
-      imageUrl: "/placeholder.svg?height=200&width=300",
-      likes: 312,
-      comments: 78,
-    },
-    {
-      id: 4,
-      title: "New Study Reveals Benefits of Mediterranean Diet",
-      summary:
-        "A comprehensive study confirms that following a Mediterranean diet can significantly reduce the risk of heart disease and improve longevity.",
-      source: "Health Journal",
-      sourceIcon: "HJ",
-      category: "health",
-      publishedAt: "8 hours ago",
-      imageUrl: "/placeholder.svg?height=200&width=300",
-      likes: 189,
-      comments: 42,
-    },
-    {
-      id: 5,
-      title: "Tech Giants Announce Collaboration on AI Ethics Standards",
-      summary:
-        "Major technology companies have formed an alliance to develop and implement ethical standards for artificial intelligence development.",
-      source: "Tech Insider",
-      sourceIcon: "TI",
-      category: "technology",
-      publishedAt: "10 hours ago",
-      imageUrl: "/placeholder.svg?height=200&width=300",
-      likes: 276,
-      comments: 93,
-    },
-  ],
-  technology: [
-    {
-      id: 1,
-      title: "SpaceX Successfully Launches Starship for Orbital Test Flight",
-      summary:
-        "SpaceX's Starship rocket completed its first successful orbital test flight, marking a significant milestone for space exploration.",
-      source: "Space News",
-      sourceIcon: "SN",
-      category: "technology",
-      publishedAt: "2 hours ago",
-      imageUrl: "/placeholder.svg?height=200&width=300",
-      likes: 245,
-      comments: 89,
-    },
-    {
-      id: 5,
-      title: "Tech Giants Announce Collaboration on AI Ethics Standards",
-      summary:
-        "Major technology companies have formed an alliance to develop and implement ethical standards for artificial intelligence development.",
-      source: "Tech Insider",
-      sourceIcon: "TI",
-      category: "technology",
-      publishedAt: "10 hours ago",
-      imageUrl: "/placeholder.svg?height=200&width=300",
-      likes: 276,
-      comments: 93,
-    },
-    {
-      id: 6,
-      title: "New Smartphone Features Advanced Camera Technology",
-      summary:
-        "The latest flagship smartphone release boasts revolutionary camera technology that rivals professional photography equipment.",
-      source: "Gadget Review",
-      sourceIcon: "GR",
-      category: "technology",
-      publishedAt: "12 hours ago",
-      imageUrl: "/placeholder.svg?height=200&width=300",
-      likes: 198,
-      comments: 65,
-    },
-  ],
-  business: [
-    {
-      id: 2,
-      title: "Global Markets React to New Economic Policies",
-      summary:
-        "Stock markets worldwide showed mixed reactions as new economic policies were announced by major economies.",
-      source: "Financial Times",
-      sourceIcon: "FT",
-      category: "business",
-      publishedAt: "4 hours ago",
-      imageUrl: "/placeholder.svg?height=200&width=300",
-      likes: 132,
-      comments: 47,
-    },
-    {
-      id: 7,
-      title: "E-commerce Giant Expands into New Markets",
-      summary:
-        "One of the world's largest e-commerce companies announced plans to expand operations into previously untapped markets.",
-      source: "Business Weekly",
-      sourceIcon: "BW",
-      category: "business",
-      publishedAt: "14 hours ago",
-      imageUrl: "/placeholder.svg?height=200&width=300",
-      likes: 154,
-      comments: 38,
-    },
-  ],
-  science: [
-    {
-      id: 3,
-      title: "Breakthrough in Renewable Energy Storage Technology",
-      summary:
-        "Scientists have developed a new battery technology that could revolutionize how renewable energy is stored and distributed.",
-      source: "Science Daily",
-      sourceIcon: "SD",
-      category: "science",
-      publishedAt: "6 hours ago",
-      imageUrl: "/placeholder.svg?height=200&width=300",
-      likes: 312,
-      comments: 78,
-    },
-    {
-      id: 8,
-      title: "New Species Discovered in Deep Ocean Exploration",
-      summary:
-        "Marine biologists have identified several previously unknown species during a deep-sea exploration mission.",
-      source: "Nature Journal",
-      sourceIcon: "NJ",
-      category: "science",
-      publishedAt: "16 hours ago",
-      imageUrl: "/placeholder.svg?height=200&width=300",
-      likes: 231,
-      comments: 57,
-    },
-  ],
-  health: [
-    {
-      id: 4,
-      title: "New Study Reveals Benefits of Mediterranean Diet",
-      summary:
-        "A comprehensive study confirms that following a Mediterranean diet can significantly reduce the risk of heart disease and improve longevity.",
-      source: "Health Journal",
-      sourceIcon: "HJ",
-      category: "health",
-      publishedAt: "8 hours ago",
-      imageUrl: "/placeholder.svg?height=200&width=300",
-      likes: 189,
-      comments: 42,
-    },
-    {
-      id: 9,
-      title: "Mental Health Awareness Campaign Launches Globally",
-      summary:
-        "A new initiative aims to reduce stigma around mental health issues and improve access to support services worldwide.",
-      source: "Wellness Today",
-      sourceIcon: "WT",
-      category: "health",
-      publishedAt: "18 hours ago",
-      imageUrl: "/placeholder.svg?height=200&width=300",
-      likes: 267,
-      comments: 83,
-    },
-  ],
+function isWithinDate(pubDate: string, dateFilter: string): boolean {
+  const now = new Date();
+  const date = new Date(pubDate);
+  switch (dateFilter) {
+    case "today":
+      return date.toDateString() === now.toDateString();
+    case "this-week": {
+      const weekAgo = new Date(now);
+      weekAgo.setDate(now.getDate() - 7);
+      return date >= weekAgo && date <= now;
+    }
+    case "this-month": {
+      return (
+        date.getFullYear() === now.getFullYear() &&
+        date.getMonth() === now.getMonth()
+      );
+    }
+    case "this-year":
+      return date.getFullYear() === now.getFullYear();
+    default:
+      return true;
+  }
 }
 
-export default function NewsFeed({ category = "all" }: { category?: string }) {
-  const newsArticles = mockNewsData[category as keyof typeof mockNewsData] || mockNewsData.all
+interface NewsFeedProps {
+  sources: string[];
+  categories: NewsCategory[];
+  dateFilter: string;
+  searchQuery: string;
+}
+
+export default function NewsFeed({
+  sources,
+  categories,
+  dateFilter,
+  searchQuery,
+}: NewsFeedProps) {
+  const { news, loading, error } = useNews();
+
+  const filteredNews = news.filter((item) => {
+    const matchesSource = sources.length === 0 || sources.includes(item.source);
+    const matchesCategory =
+      categories.length === 0 ||
+      (item.categories &&
+        item.categories.some((cat) => categories.includes(cat)));
+    const matchesDate = isWithinDate(item.pubDate, dateFilter);
+    const matchesSearch =
+      !searchQuery ||
+      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.content.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSource && matchesCategory && matchesDate && matchesSearch;
+  });
+
+  // Show error as a banner instead of full screen
+  const errorBanner = error && (
+    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 p-4 rounded-lg mb-6">
+      Error loading news: {error}
+    </div>
+  );
 
   return (
-    <div className="newspaper-column">
-      {newsArticles.map((article, index) => (
-        <article key={article.id} className="mb-8 break-inside-avoid">
-          <div className="mb-2">
-            <div className="flex items-center justify-between text-xs mb-1">
-              <div className="uppercase font-semibold">{article.category}</div>
-              <div className="flex items-center text-muted-foreground">
-                <Clock className="mr-1 h-3 w-3" />
-                <span>{article.publishedAt}</span>
+    <div className="space-y-8">
+      {errorBanner}
+      {loading && news.length === 0 ? (
+        <div className="flex flex-col items-center justify-center min-h-[200px]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="mt-4 text-muted-foreground">Loading news...</p>
+        </div>
+      ) : (
+        <>
+          {filteredNews.length === 0 && (
+            <div className="text-center text-gray-500">
+              No news found for the selected filters.
+            </div>
+          )}
+          {filteredNews.map((item) => (
+            <article key={item.guid} className="flex flex-col space-y-4">
+              <div className="space-y-2">
+                <h2 className="text-2xl font-bold tracking-tight hover:text-blue-600">
+                  <a href={item.link} target="_blank" rel="noopener noreferrer">
+                    {item.title}
+                  </a>
+                </h2>
+                <div className="flex flex-wrap items-center gap-2 text-sm text-gray-500">
+                  <Clock className="w-4 h-4" />
+                  <time>{new Date(item.pubDate).toLocaleDateString()}</time>
+                  <Separator orientation="vertical" className="h-4" />
+                  <span>{item.source}</span>
+                  {item.categories?.length > 0 && (
+                    <>
+                      <Separator orientation="vertical" className="h-4" />
+                      <span>{item.categories.join(", ")}</span>
+                    </>
+                  )}
+                </div>
               </div>
+              <div className="text-gray-700 leading-relaxed">
+                {truncateText(stripHtml(item.content), 300)}
+              </div>
+              <div>
+                <Button variant="outline" size="sm" asChild>
+                  <a href={item.link} target="_blank" rel="noopener noreferrer">
+                    Read more <ExternalLink className="w-4 h-4 ml-2" />
+                  </a>
+                </Button>
+              </div>
+              <Separator />
+            </article>
+          ))}{" "}
+          {loading && (
+            <div className="flex justify-center py-4">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-            <h3 className="font-heading text-xl md:text-2xl leading-tight mb-2">{article.title}</h3>
-            <div className="relative h-48 w-full mb-3">
-              <Image src={article.imageUrl || "/placeholder.svg"} alt={article.title} fill className="object-cover" />
-            </div>
-            <p className="first-letter text-base leading-relaxed mb-3">{article.summary}</p>
-            <div className="flex justify-between items-center text-xs">
-              <span className="italic">By {article.source} Correspondent</span>
-              <Button variant="link" size="sm" className="flex items-center h-auto p-0">
-                <span className="underline">Continue reading</span>
-                <ExternalLink className="h-3 w-3 ml-1" />
-              </Button>
-            </div>
-          </div>
-          {index < newsArticles.length - 1 && <Separator className="newspaper-divider" />}
-        </article>
-      ))}
+          )}
+        </>
+      )}
     </div>
-  )
+  );
 }
-

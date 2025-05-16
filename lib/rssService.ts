@@ -1,0 +1,83 @@
+import Parser from "rss-parser";
+import { NewsItem, NewsCategory } from "@/types/news";
+
+const parser = new Parser();
+
+// Category keywords for classification
+const CATEGORY_KEYWORDS = {
+  Local: ["fiji", "suva", "nadi", "local", "community", "pacific"],
+  Technology: ["technology", "digital", "internet", "cyber", "tech", "online"],
+  Business: ["business", "economy", "market", "trade", "finance", "company"],
+  Health: ["health", "medical", "hospital", "disease", "healthcare", "covid"],
+  World: ["world", "international", "global", "foreign", "overseas"],
+  Sports: ["sports", "rugby", "football", "cricket", "athletics", "olympics"],
+};
+
+export const RSS_SOURCES = [
+  "https://www.fbcnews.com.fj/feed/",
+  "https://fijisun.com.fj/feed/",
+  "https://islandsbusiness.com/feed/",
+  "https://fijilive.com/feed/",
+  "https://fijionenews.com.fj/feed/",
+  "https://www.fijitimes.com.fj/feed/",
+];
+
+function categorizeNews(title: string, content: string): NewsCategory[] {
+  const categories = new Set<NewsCategory>();
+  const textToCheck = `${title} ${content}`.toLowerCase();
+
+  Object.entries(CATEGORY_KEYWORDS).forEach(([category, keywords]) => {
+    if (
+      keywords.some((keyword) => textToCheck.includes(keyword.toLowerCase()))
+    ) {
+      categories.add(category as NewsCategory);
+    }
+  });
+
+  // Always ensure at least one category
+  if (categories.size === 0) {
+    categories.add("Local");
+  }
+
+  return Array.from(categories);
+}
+
+export async function fetchSingleFeed(source: string): Promise<NewsItem[]> {
+  try {
+    // Add proxy to handle CORS
+    const proxyUrl = source.startsWith("http")
+      ? `https://api.allorigins.win/raw?url=${encodeURIComponent(source)}`
+      : source;
+
+    const response = await fetch(proxyUrl);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const feedContent = await response.text();
+    const feed = await parser.parseString(feedContent);
+
+    return feed.items.map((item) => {
+      const content = item.content || item["content:encoded"] || "";
+      const title = item.title || "";
+      return {
+        title: title,
+        link: item.link || "",
+        pubDate: item.pubDate || new Date().toISOString(),
+        content: content,
+        source: new URL(source).hostname,
+        guid: item.guid || `${source}-${title}`,
+        categories: categorizeNews(title, content),
+      };
+    });
+  } catch (error) {
+    console.error(`Error fetching ${source}:`, error);
+    return [];
+  }
+}
+
+export async function* fetchFeedsGenerator() {
+  for (const source of RSS_SOURCES) {
+    const items = await fetchSingleFeed(source);
+    yield items;
+  }
+}
