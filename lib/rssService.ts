@@ -1,5 +1,6 @@
 import Parser from "rss-parser";
 import { NewsItem, NewsCategory } from "@/types/news";
+import { formatVolumeInfo } from "./textUtils";
 
 const parser = new Parser();
 
@@ -59,14 +60,36 @@ export async function fetchSingleFeed(source: string): Promise<NewsItem[]> {
     return feed.items.map((item) => {
       const content = item.content || item["content:encoded"] || "";
       const title = item.title || "";
+      const pubDate = item.pubDate ? new Date(item.pubDate) : new Date();
+
+      // Calculate days elapsed in the current month
+      const startOfMonth = new Date(
+        pubDate.getFullYear(),
+        pubDate.getMonth(),
+        1
+      );
+      const daysDiff = Math.floor(
+        (pubDate.getTime() - startOfMonth.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      // Generate volume info based on publication date
+      // Volume is the year-month combination, Issue is the week number within that month
+      const volumeInfo = {
+        number: `${pubDate.getFullYear()}-${(pubDate.getMonth() + 1)
+          .toString()
+          .padStart(2, "0")}`,
+        issue: `${Math.floor(daysDiff / 7) + 1}`,
+      };
+
       return {
         title: title,
         link: item.link || "",
-        pubDate: item.pubDate || new Date().toISOString(),
+        pubDate: pubDate.toISOString(),
         content: content,
         source: new URL(source).hostname,
         guid: item.guid || `${source}-${title}`,
         categories: categorizeNews(title, content),
+        volume: volumeInfo,
       };
     });
   } catch (error) {

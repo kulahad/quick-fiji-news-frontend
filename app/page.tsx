@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "@/components/theme-toggle";
 import NewsContainer from "@/components/news-container";
+import { calculateVolumeInfo } from "@/lib/textUtils";
 
 export default function Home() {
   // Get current date in newspaper format
@@ -28,9 +29,11 @@ export default function Home() {
             <div className="text-xs uppercase tracking-widest mt-1">
               {formattedDate}
             </div>
-          </div>
+          </div>{" "}
           <div className="flex justify-between items-center text-sm border-t border-b border-black dark:border-gray-800 py-2">
-            <div>Vol. XXIV No. 1,842</div>
+            <div>{`Vol. ${calculateVolumeInfo(today).volume} No. ${
+              calculateVolumeInfo(today).issueNumber
+            }`}</div>
             <div>Fiji's Premier News Aggregator</div>
             <div>Daily Edition</div>
           </div>

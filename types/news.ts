@@ -15,6 +15,10 @@ export interface NewsItem {
   source: string;
   guid: string;
   categories: NewsCategory[];
+  volume?: {
+    number: string;
+    issue: string;
+  };
 }
 
 export interface FeedResponse {
