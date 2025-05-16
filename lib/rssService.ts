@@ -45,12 +45,7 @@ function categorizeNews(title: string, content: string): NewsCategory[] {
 
 export async function fetchSingleFeed(source: string): Promise<NewsItem[]> {
   try {
-    // Add proxy to handle CORS
-    const proxyUrl = source.startsWith("http")
-      ? `https://api.allorigins.win/raw?url=${encodeURIComponent(source)}`
-      : source;
-
-    const response = await fetch(proxyUrl);
+    const response = await fetch(source);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
