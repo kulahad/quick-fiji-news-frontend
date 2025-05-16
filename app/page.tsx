@@ -19,13 +19,15 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <header className="border-b border-black dark:border-gray-800">
         <div className="container px-4 md:px-6 lg:px-8 py-6">
-          <div className="flex justify-end mb-2">
-            <ThemeToggle />
-          </div>
-          <div className="text-center mb-4">
-            <h1 className="font-heading text-4xl md:text-6xl lg:text-7xl tracking-tighter">
+          <div className="flex justify-center align-middle items-center mb-2 mx-autoS">
+            <h1 className="font-heading text-4xl md:text-6xl lg:text-7xl tracking-tighter mr-5">
               Quick Fiji News
             </h1>
+            <span>
+              <ThemeToggle />
+            </span>
+          </div>
+          <div className="text-center mb-4">
             <div className="text-xs uppercase tracking-widest mt-1">
               {formattedDate}
             </div>
