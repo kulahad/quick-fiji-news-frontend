@@ -58,7 +58,29 @@ function categorizeNews(title: string, content: string): NewsCategory[] {
   return Array.from(categories);
 }
 
-export async function fetchSingleFeed(source: string): Promise<NewsItem[]> {
+// Keep track of failed feeds and their retry counts
+const failedFeeds = new Map<string, { retries: number; lastAttempt: number }>();
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 30000; // 30 seconds
+
+export async function fetchSingleFeed(
+  source: string,
+  retryCount = 0
+): Promise<NewsItem[]> {
+  // Check if we should retry this feed
+  const failedFeed = failedFeeds.get(source);
+  if (failedFeed) {
+    const timeSinceLastAttempt = Date.now() - failedFeed.lastAttempt;
+    if (timeSinceLastAttempt < RETRY_DELAY) {
+      console.log(
+        `Skipping ${source}, too soon to retry. Wait ${
+          (RETRY_DELAY - timeSinceLastAttempt) / 1000
+        }s`
+      );
+      return [];
+    }
+  }
+
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
@@ -105,12 +127,17 @@ export async function fetchSingleFeed(source: string): Promise<NewsItem[]> {
           .toString()
           .padStart(2, "0")}`,
         issue: `${Math.floor(daysDiff / 7) + 1}`,
-      };
+      }; // Set time to start of day to remove time component
+      const dateOnly = new Date(
+        pubDate.getFullYear(),
+        pubDate.getMonth(),
+        pubDate.getDate()
+      );
 
       return {
         title,
         link: item.link || "",
-        pubDate: pubDate.toISOString(),
+        pubDate: dateOnly.toISOString().split("T")[0],
         content,
         source: new URL(source).hostname,
         guid: item.guid || `${source}-${title}`,
@@ -120,6 +147,38 @@ export async function fetchSingleFeed(source: string): Promise<NewsItem[]> {
     });
   } catch (error) {
     console.error(`Error fetching ${source}:`, error);
+
+    // Handle retry logic
+    const currentFailedFeed = failedFeeds.get(source) || {
+      retries: 0,
+      lastAttempt: 0,
+    };
+
+    if (currentFailedFeed.retries < MAX_RETRIES) {
+      failedFeeds.set(source, {
+        retries: currentFailedFeed.retries + 1,
+        lastAttempt: Date.now(),
+      });
+
+      // Schedule a retry
+      setTimeout(async () => {
+        console.log(
+          `Retrying ${source}, attempt ${currentFailedFeed.retries + 1}`
+        );
+        const retryResult = await fetchSingleFeed(
+          source,
+          currentFailedFeed.retries + 1
+        );
+        if (retryResult.length > 0) {
+          // Successfully retrieved data, remove from failed feeds
+          failedFeeds.delete(source);
+        }
+      }, RETRY_DELAY);
+    } else {
+      console.error(`Max retries reached for ${source}`);
+      failedFeeds.delete(source); // Reset retry count after max retries
+    }
+
     return [];
   }
 }

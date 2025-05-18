@@ -9,17 +9,16 @@ import { Separator } from "@/components/ui/separator";
 import { useNews } from "@/hooks/use-news";
 import { stripHtml, truncateText, formatVolumeInfo } from "@/lib/textUtils";
 import { NewsCategory } from "@/types/news";
+import { useEffect } from "react";
 
 // Helper function to format dates
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
   return date.toLocaleDateString("en-US", {
-    weekday: "short",
+    weekday: "long",
     year: "numeric",
-    month: "short",
+    month: "long",
     day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
   });
 }
 
@@ -72,7 +71,16 @@ export default function NewsFeed({
   dateFilter,
   searchQuery,
 }: NewsFeedProps) {
-  const { news, loading, error } = useNews();
+  const { news, loading, error, refetch } = useNews();
+
+  // Periodically refetch to get any retry results
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refetch();
+    }, 45000); // Check every 45 seconds for new content
+
+    return () => clearInterval(interval);
+  }, [refetch]);
 
   const filteredAndSortedNews = news
     .filter((item) => {
@@ -179,19 +187,40 @@ export default function NewsFeed({
                   </div>
                   {item.categories?.length > 0 && (
                     <>
-                      <Separator orientation="vertical" className="h-4" />
+                      <Separator orientation="vertical" className="h-4" />{" "}
                       <div className="flex flex-wrap gap-1.5">
-                        {item.categories.map((category) => (
-                          <Badge
-                            key={category}
-                            variant={
-                              category === "Local" ? "default" : "secondary"
+                        {item.categories.map((category) => {
+                          const getBadgeStyle = (cat: string) => {
+                            switch (cat) {
+                              case "Local":
+                                return "bg-blue-500/10 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 hover:bg-blue-500/20 dark:hover:bg-blue-500/30";
+                              case "Technology":
+                                return "bg-purple-500/10 dark:bg-purple-500/20 text-purple-700 dark:text-purple-300 hover:bg-purple-500/20 dark:hover:bg-purple-500/30";
+                              case "Business":
+                                return "bg-green-500/10 dark:bg-green-500/20 text-green-700 dark:text-green-300 hover:bg-green-500/20 dark:hover:bg-green-500/30";
+                              case "Health":
+                                return "bg-red-500/10 dark:bg-red-500/20 text-red-700 dark:text-red-300 hover:bg-red-500/20 dark:hover:bg-red-500/30";
+                              case "World":
+                                return "bg-amber-500/10 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 dark:hover:bg-amber-500/30";
+                              case "Sports":
+                                return "bg-orange-500/10 dark:bg-orange-500/20 text-orange-700 dark:text-orange-300 hover:bg-orange-500/20 dark:hover:bg-orange-500/30";
+                              default:
+                                return "bg-gray-500/10 dark:bg-gray-500/20 text-gray-700 dark:text-gray-300 hover:bg-gray-500/20 dark:hover:bg-gray-500/30";
                             }
-                            className="text-[10px] uppercase tracking-wider font-medium"
-                          >
-                            {category}
-                          </Badge>
-                        ))}
+                          };
+
+                          return (
+                            <Badge
+                              key={category}
+                              variant="outline"
+                              className={`text-[11px] px-2.5 py-0.5 font-medium tracking-wide transition-colors duration-200 ${getBadgeStyle(
+                                category
+                              )}`}
+                            >
+                              {category}
+                            </Badge>
+                          );
+                        })}
                       </div>
                     </>
                   )}
