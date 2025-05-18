@@ -15,12 +15,12 @@ const CATEGORY_KEYWORDS = {
 };
 
 export const RSS_SOURCES = [
-  "https://www.fbcnews.com.fj/feed/",
+  "https://fbcnews.com.fj/feed/",
   "https://fijisun.com.fj/feed/",
   "https://islandsbusiness.com/feed/",
   "https://fijilive.com/feed/",
   "https://fijionenews.com.fj/feed/",
-  "https://www.fijitimes.com.fj/feed/",
+  "https://fijitimes.com.fj/feed/",
 ];
 
 function categorizeNews(title: string, content: string): NewsCategory[] {

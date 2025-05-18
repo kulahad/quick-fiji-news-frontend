@@ -1,6 +1,7 @@
 "use client";
 import Image from "next/image";
 import { Clock, ExternalLink, Loader2 } from "lucide-react";
+import { SOURCES } from "./news-filters";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,12 +25,14 @@ function formatDate(dateString: string): string {
 
 // Helper function to format source names
 function formatSource(source: string): string {
-  // Remove domain extensions and convert to title case
-  return source
-    .replace(/\.(com|fj|org)(\.[a-z]+)?$/, "")
-    .split(/[-.]/)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+  // Extract domain without protocol and path
+  const domain = source.replace(/^https?:\/\/(?:www\.)?([^/]+).*$/, "$1");
+
+  // Find matching source from SOURCES
+  const sourceInfo = SOURCES.find(
+    (s: { value: string; label: string }) => s.value === domain
+  );
+  return sourceInfo ? sourceInfo.label : domain;
 }
 
 function isWithinDate(pubDate: string, dateFilter: string): boolean {

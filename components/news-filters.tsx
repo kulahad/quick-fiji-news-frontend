@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/select";
 import { NewsCategory } from "@/types/news";
 
-const SOURCES = [
+export const SOURCES = [
   { id: "fbcnews", label: "FBC News", value: "fbcnews.com.fj" },
   { id: "fijisun", label: "Fiji Sun", value: "fijisun.com.fj" },
   {
@@ -42,7 +42,7 @@ const SOURCES = [
   { id: "fijilive", label: "Fiji Live", value: "fijilive.com" },
   { id: "fijionenews", label: "Fiji One News", value: "fijionenews.com.fj" },
   { id: "fijitimes", label: "Fiji Times", value: "fijitimes.com.fj" },
-];
+] as const;
 
 const CATEGORIES: NewsCategory[] = [
   "Local",
