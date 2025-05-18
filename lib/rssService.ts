@@ -45,7 +45,23 @@ function categorizeNews(title: string, content: string): NewsCategory[] {
 
 export async function fetchSingleFeed(source: string): Promise<NewsItem[]> {
   try {
-    const response = await fetch(source);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+    const response = await fetch(source, {
+      headers: {
+        "User-Agent": "Quick Fiji News/1.0",
+        Accept:
+          "application/rss+xml, application/xml, application/atom+xml, text/xml;q=0.9",
+      },
+      signal: controller.signal,
+      next: {
+        revalidate: 300, // Cache for 5 minutes
+      },
+    });
+
+    clearTimeout(timeoutId);
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }

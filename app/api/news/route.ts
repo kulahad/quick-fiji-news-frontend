@@ -2,28 +2,29 @@ import { NextResponse } from "next/server";
 import { fetchSingleFeed, RSS_SOURCES } from "@/lib/rssService";
 import { NewsItem } from "@/types/news";
 
+export const runtime = "edge";
+export const dynamic = "force-dynamic";
+export const revalidate = 300; // Revalidate every 5 minutes
+
 export async function GET() {
   try {
     const allNews: NewsItem[] = [];
+    const sourcePromises = RSS_SOURCES.map((source) =>
+      fetchSingleFeed(source).catch((error) => {
+        console.error(`Error fetching ${source}:`, error);
+        return []; // Return empty array on error
+      })
+    );
 
-    // Fetch each feed with a timeout
-    for (const source of RSS_SOURCES) {
-      try {
-        const items = await Promise.race([
-          fetchSingleFeed(source),
-          new Promise<NewsItem[]>((_, reject) =>
-            setTimeout(() => reject(new Error("Timeout")), 10000)
-          ),
-        ]);
-        if (items && Array.isArray(items)) {
-          allNews.push(...items);
-        }
-      } catch (sourceError) {
-        console.error(`Error fetching ${source}:`, sourceError);
-        // Continue with other sources even if one fails
-        continue;
+    // Fetch all sources in parallel with a timeout
+    const results = await Promise.all(sourcePromises);
+
+    // Combine all results
+    results.forEach((items) => {
+      if (items && Array.isArray(items)) {
+        allNews.push(...items);
       }
-    }
+    });
 
     // If no news items were fetched, throw an error
     if (allNews.length === 0) {
@@ -42,7 +43,8 @@ export async function GET() {
       }),
       {
         headers: {
-          "Cache-Control": "no-store, max-age=0",
+          "Content-Type": "application/json",
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
         },
       }
     );
