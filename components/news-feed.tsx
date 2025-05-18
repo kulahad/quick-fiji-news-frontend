@@ -22,14 +22,20 @@ function formatDate(dateString: string): string {
   });
 }
 
+// Helper function to normalize domain
+function normalizeDomain(domain: string): string {
+  return domain.replace(/^(www\.)?/, '').toLowerCase();
+}
+
 // Helper function to format source names
 function formatSource(source: string): string {
   // Extract domain without protocol and path
   const domain = source.replace(/^https?:\/\/(?:www\.)?([^/]+).*$/, "$1");
+  const normalizedDomain = normalizeDomain(domain);
 
   // Find matching source from SOURCES
   const sourceInfo = SOURCES.find(
-    (s: { value: string; label: string }) => s.value === domain
+    (s: { value: string; label: string }) => normalizeDomain(s.value) === normalizedDomain
   );
   return sourceInfo ? sourceInfo.label : domain;
 }
