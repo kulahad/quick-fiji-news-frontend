@@ -1,51 +1,68 @@
 import { useState, useEffect } from "react";
-import { NewsItem, FeedResponse } from "@/types/news";
+import { NewsItem } from "@/types/news";
 
 export function useNews() {
   const [news, setNews] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
+  const [loadedSources, setLoadedSources] = useState<Set<string>>(new Set());
 
   const fetchNews = async (signal?: AbortSignal) => {
     if (retrying) return;
+
     try {
-      const response = await fetch("/api/news", {
+      setNews([]); // Reset news state
+      setLoading(true);
+      setLoadedSources(new Set());
+
+      const response = await fetch("/api/news-stream", {
         signal,
-        cache: "no-store",
-        next: { revalidate: 0 },
       });
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data: FeedResponse = await response.json();
-
-      if (data.error) {
-        setError(data.error);
-        return;
+      const reader = response.body?.getReader();
+      if (!reader) {
+        throw new Error("No reader available");
       }
 
-      // Sort news by date
-      const sortedItems = [...(data.items || [])].sort(
-        (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
-      );
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
 
-      // Show first batch immediately
-      setNews(sortedItems.slice(0, 5));
-      setLoading(false);
+        // Convert the chunk to text
+        const chunk = new TextDecoder().decode(value);
+        const lines = chunk.split("\n").filter(Boolean);
 
-      // Show rest in batches with small delays
-      const batchSize = 5;
-      for (let i = batchSize; i <= sortedItems.length; i += batchSize) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        setNews(sortedItems.slice(0, i));
-      }
+        for (const line of lines) {
+          const data = JSON.parse(line);
 
-      // Set final batch if not perfectly divisible
-      if (sortedItems.length % batchSize !== 0) {
-        setNews(sortedItems);
+          switch (data.type) {
+            case "chunk":
+              setNews((current) => {
+                const newNews = [...current, ...data.items];
+                // Sort by date
+                return newNews.sort(
+                  (a, b) =>
+                    new Date(b.pubDate).getTime() -
+                    new Date(a.pubDate).getTime()
+                );
+              });
+              setLoadedSources((current) => new Set([...current, data.source]));
+              break;
+
+            case "error":
+              console.error(`Error loading ${data.source}:`, data.error);
+              break;
+
+            case "end":
+              setLoading(false);
+              break;
+          }
+        }
       }
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") {
@@ -56,7 +73,6 @@ export function useNews() {
           ? err.message
           : "Failed to fetch news. Please try again."
       );
-    } finally {
       setLoading(false);
     }
   };
@@ -71,16 +87,19 @@ export function useNews() {
   };
 
   useEffect(() => {
-    let mounted = true;
     const abortController = new AbortController();
-
     fetchNews(abortController.signal);
 
     return () => {
-      mounted = false;
       abortController.abort();
     };
   }, []);
 
-  return { news, loading, error, refetch };
+  return {
+    news,
+    loading,
+    error,
+    refetch,
+    loadedSources: Array.from(loadedSources),
+  };
 }
