@@ -24,7 +24,7 @@ function formatDate(dateString: string): string {
 
 // Helper function to normalize domain
 function normalizeDomain(domain: string): string {
-  return domain.replace(/^(www\.)?/, '').toLowerCase();
+  return domain.replace(/^(www\.)?/, "").toLowerCase();
 }
 
 // Helper function to format source names
@@ -35,7 +35,8 @@ function formatSource(source: string): string {
 
   // Find matching source from SOURCES
   const sourceInfo = SOURCES.find(
-    (s: { value: string; label: string }) => normalizeDomain(s.value) === normalizedDomain
+    (s: { value: string; label: string }) =>
+      normalizeDomain(s.value) === normalizedDomain
   );
   return sourceInfo ? sourceInfo.label : domain;
 }
@@ -90,9 +91,9 @@ export default function NewsFeed({
 
   const filteredAndSortedNews = news
     .filter((item) => {
-      // Source filtering
+      // Source filtering with normalized domains
       const matchesSource =
-        sources.length === 0 || sources.includes(item.source);
+        sources.length === 0 || sources.includes(normalizeDomain(item.source));
 
       // Category filtering - normalize case and handle arrays properly
       const matchesCategory =

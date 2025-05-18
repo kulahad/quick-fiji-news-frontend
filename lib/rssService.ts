@@ -139,7 +139,7 @@ export async function fetchSingleFeed(
         link: item.link || "",
         pubDate: dateOnly.toISOString().split("T")[0],
         content,
-        source: new URL(source).hostname,
+        source: new URL(source).hostname.replace(/^www\./, ""),
         guid: item.guid || `${source}-${title}`,
         categories: categorizeNews(title, content),
         volume: volumeInfo,
