@@ -4,6 +4,9 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import NewsContainer from "@/components/news-container";
 import { calculateVolumeInfo } from "@/lib/textUtils";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 export default function Home() {
   // Get current date in newspaper format
   const today = new Date();

@@ -34,12 +34,18 @@ export async function GET() {
     const sortedNews = allNews.sort(
       (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
     );
-
-    return NextResponse.json({
-      items: sortedNews,
-      sourcesCount: RSS_SOURCES.length,
-      totalItems: sortedNews.length,
-    });
+    return new NextResponse(
+      JSON.stringify({
+        items: sortedNews,
+        sourcesCount: RSS_SOURCES.length,
+        totalItems: sortedNews.length,
+      }),
+      {
+        headers: {
+          "Cache-Control": "no-store, max-age=0",
+        },
+      }
+    );
   } catch (error) {
     console.error("Error fetching news:", error);
     return NextResponse.json(

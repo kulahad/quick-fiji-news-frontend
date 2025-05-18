@@ -14,6 +14,8 @@ export function useNews() {
       try {
         const response = await fetch("/api/news", {
           signal: abortController.signal,
+          cache: "no-store",
+          next: { revalidate: 0 },
         });
 
         if (!response.ok) {
