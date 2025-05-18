@@ -41,6 +41,9 @@ export function useNews() {
           const data = JSON.parse(line);
 
           switch (data.type) {
+            case "start":
+              break;
+
             case "chunk":
               setNews((current) => {
                 const newNews = [...current, ...data.items];
@@ -67,12 +70,26 @@ export function useNews() {
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") {
         return;
+      } // Convert technical errors to user-friendly messages
+      if (err instanceof Error) {
+        if (err.name === "SyntaxError") {
+          setError(
+            "Unable to process the news feed data. Our team has been notified."
+          );
+        } else if (err.name === "TypeError") {
+          setError(
+            "Unable to connect to the news service. Please check your internet connection."
+          );
+        } else {
+          setError(
+            "We're having trouble loading the news. Please try again in a few minutes."
+          );
+        }
+      } else {
+        setError(
+          "Unable to load the news feed. Please try refreshing the page."
+        );
       }
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to fetch news. Please try again."
-      );
       setLoading(false);
     }
   };

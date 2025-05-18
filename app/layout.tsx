@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Playfair_Display, Merriweather } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Toaster } from "@/components/ui/sonner";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -32,6 +33,7 @@ export default function RootLayout({
       <body
         className={`${playfair.variable} ${merriweather.variable} font-serif`}
       >
+        {" "}
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
@@ -39,6 +41,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           {children}
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>
