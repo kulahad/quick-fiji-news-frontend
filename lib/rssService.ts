@@ -1,8 +1,23 @@
-import Parser from "rss-parser";
 import { NewsItem, NewsCategory } from "@/types/news";
-import { formatVolumeInfo } from "./textUtils";
+import fetch from "node-fetch";
+import { XMLParser } from "fast-xml-parser";
 
-const parser = new Parser();
+interface RSSItem {
+  title?: string;
+  link?: string;
+  pubDate?: string;
+  description?: string;
+  content?: string;
+  "content:encoded"?: string;
+  guid?: string;
+}
+
+const parser = new XMLParser({
+  ignoreAttributes: false,
+  attributeNamePrefix: "_",
+  textNodeName: "text",
+  isArray: (name) => ["item", "entry"].includes(name),
+});
 
 // Category keywords for classification
 const CATEGORY_KEYWORDS = {
@@ -46,18 +61,15 @@ function categorizeNews(title: string, content: string): NewsCategory[] {
 export async function fetchSingleFeed(source: string): Promise<NewsItem[]> {
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
     const response = await fetch(source, {
       headers: {
-        "User-Agent": "Quick Fiji News/1.0",
-        Accept:
-          "application/rss+xml, application/xml, application/atom+xml, text/xml;q=0.9",
+        "User-Agent": "Mozilla/5.0 (compatible; QuickFijiNews/1.0)",
+        Accept: "application/xml, text/xml, application/rss+xml",
+        "Cache-Control": "no-cache",
       },
       signal: controller.signal,
-      next: {
-        revalidate: 300, // Cache for 5 minutes
-      },
     });
 
     clearTimeout(timeoutId);
@@ -65,15 +77,20 @@ export async function fetchSingleFeed(source: string): Promise<NewsItem[]> {
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    const feedContent = await response.text();
-    const feed = await parser.parseString(feedContent);
 
-    return feed.items.map((item) => {
-      const content = item.content || item["content:encoded"] || "";
+    const feedContent = await response.text();
+    const result = parser.parse(feedContent);
+
+    // Handle both RSS and Atom feeds
+    const channel = result.rss?.channel || result.feed;
+    const items = channel?.item || channel?.entry || [];
+
+    return items.map((item: RSSItem) => {
+      const content =
+        item.content || item["content:encoded"] || item.description || "";
       const title = item.title || "";
       const pubDate = item.pubDate ? new Date(item.pubDate) : new Date();
 
-      // Calculate days elapsed in the current month
       const startOfMonth = new Date(
         pubDate.getFullYear(),
         pubDate.getMonth(),
@@ -83,8 +100,6 @@ export async function fetchSingleFeed(source: string): Promise<NewsItem[]> {
         (pubDate.getTime() - startOfMonth.getTime()) / (1000 * 60 * 60 * 24)
       );
 
-      // Generate volume info based on publication date
-      // Volume is the year-month combination, Issue is the week number within that month
       const volumeInfo = {
         number: `${pubDate.getFullYear()}-${(pubDate.getMonth() + 1)
           .toString()
@@ -93,10 +108,10 @@ export async function fetchSingleFeed(source: string): Promise<NewsItem[]> {
       };
 
       return {
-        title: title,
+        title,
         link: item.link || "",
         pubDate: pubDate.toISOString(),
-        content: content,
+        content,
         source: new URL(source).hostname,
         guid: item.guid || `${source}-${title}`,
         categories: categorizeNews(title, content),

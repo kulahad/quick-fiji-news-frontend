@@ -2,22 +2,24 @@ import { NextResponse } from "next/server";
 import { fetchSingleFeed, RSS_SOURCES } from "@/lib/rssService";
 import { NewsItem } from "@/types/news";
 
-export const runtime = "edge";
+// Use dynamic rendering but with caching
 export const dynamic = "force-dynamic";
-export const revalidate = 300; // Revalidate every 5 minutes
+export const revalidate = 300; // 5 minutes
 
 export async function GET() {
   try {
     const allNews: NewsItem[] = [];
-    const sourcePromises = RSS_SOURCES.map((source) =>
+
+    // Create an array of promises for parallel fetching
+    const fetchPromises = RSS_SOURCES.map((source) =>
       fetchSingleFeed(source).catch((error) => {
         console.error(`Error fetching ${source}:`, error);
         return []; // Return empty array on error
       })
     );
 
-    // Fetch all sources in parallel with a timeout
-    const results = await Promise.all(sourcePromises);
+    // Wait for all fetches to complete
+    const results = await Promise.all(fetchPromises);
 
     // Combine all results
     results.forEach((items) => {
@@ -35,6 +37,8 @@ export async function GET() {
     const sortedNews = allNews.sort(
       (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
     );
+
+    // Return response with caching headers
     return new NextResponse(
       JSON.stringify({
         items: sortedNews,
@@ -44,7 +48,7 @@ export async function GET() {
       {
         headers: {
           "Content-Type": "application/json",
-          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+          "Cache-Control": "private, no-cache, no-store, must-revalidate",
         },
       }
     );
