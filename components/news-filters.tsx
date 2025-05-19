@@ -1,6 +1,6 @@
 "use client";
 
-import { Filter, Search, X } from "lucide-react";
+import { Filter, Search, X, Clock, MapPin } from "lucide-react";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
 import { Button } from "@/components/ui/button";
@@ -53,6 +53,8 @@ const CATEGORIES: NewsCategory[] = [
   "Sports",
 ];
 
+type SortOption = "latest" | "local-first";
+
 interface NewsFiltersProps {
   selectedSources: string[];
   setSelectedSources: (sources: string[]) => void;
@@ -62,6 +64,8 @@ interface NewsFiltersProps {
   setDateFilter: (date: string) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  sortOption: SortOption;
+  setSortOption: (sort: SortOption) => void;
 }
 
 export function NewsFilters({
@@ -73,29 +77,52 @@ export function NewsFilters({
   setDateFilter,
   searchQuery,
   setSearchQuery,
+  sortOption,
+  setSortOption,
 }: NewsFiltersProps) {
   const isMobile = useMediaQuery("(max-width: 768px)");
 
   const filterContent = (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search articles..."
-            className="pl-8 border-black dark:border-gray-800"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-        </div>
+      <div className="relative">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="search"
+          placeholder="Search articles..."
+          className="pl-8 border-black dark:border-gray-800"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+        />
       </div>
-      <Separator className="bg-black/20 dark:bg-white/20" />
-      <Accordion
-        type="multiple"
-        defaultValue={["sources", "categories", "date"]}
-        className="w-full"
-      >
+      <Separator className="bg-black/20 dark:bg-white/20" />{" "}
+      <Accordion type="multiple" defaultValue={["sort"]} className="w-full">
+        <AccordionItem value="sort" className="border-b-0">
+          <AccordionTrigger className="font-heading py-2 hover:no-underline">
+            Sort By
+          </AccordionTrigger>
+          <AccordionContent className="pt-1 pb-2">
+            <div className="flex flex-col gap-2">
+              <Button
+                variant={sortOption === "latest" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSortOption("latest")}
+                className="justify-start"
+              >
+                <Clock className="mr-2 h-4 w-4" />
+                Latest First
+              </Button>
+              <Button
+                variant={sortOption === "local-first" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSortOption("local-first")}
+                className="justify-start"
+              >
+                <MapPin className="mr-2 h-4 w-4" />
+                Local News First
+              </Button>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
         <AccordionItem value="sources" className="border-b-0">
           <AccordionTrigger className="font-heading py-2 hover:no-underline">
             Sources

@@ -28,6 +28,10 @@ export default function NewsContainer() {
     useState<NewsCategory[]>(ALL_CATEGORIES);
   const [dateFilter, setDateFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [sortOption, setSortOption] = useState<"latest" | "local-first">(
+    "latest"
+  );
+
   return (
     <div className="flex flex-col md:flex-row gap-4 md:gap-8">
       <div className="md:w-1/3 lg:w-1/4">
@@ -40,6 +44,8 @@ export default function NewsContainer() {
           setDateFilter={setDateFilter}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
+          sortOption={sortOption}
+          setSortOption={setSortOption}
         />
       </div>
       <main className="flex-1 min-w-0">
@@ -48,6 +54,7 @@ export default function NewsContainer() {
           categories={selectedCategories}
           dateFilter={dateFilter}
           searchQuery={searchQuery}
+          sortOption={sortOption}
         />
       </main>
     </div>

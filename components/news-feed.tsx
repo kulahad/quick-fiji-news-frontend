@@ -8,17 +8,7 @@ import { useNews } from "../hooks/use-news";
 import { stripHtml, truncateText, formatVolumeInfo } from "../lib/textUtils";
 import { NewsCategory, NewsItem } from "@/types/news";
 import { Toaster, toast } from "sonner";
-
-// Helper function to format dates
-function formatDate(dateString: string): string {
-  const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
+import { formatDate } from "../lib/dateUtils";
 
 // Helper function to normalize domain
 function normalizeDomain(domain: string): string {
@@ -80,11 +70,14 @@ function getBadgeStyle(category: string): string {
   }
 }
 
+type SortOption = "latest" | "local-first";
+
 interface NewsFeedProps {
   sources: string[];
   categories: NewsCategory[];
   dateFilter: string;
   searchQuery: string;
+  sortOption?: SortOption;
 }
 
 export default function NewsFeed({
@@ -92,6 +85,7 @@ export default function NewsFeed({
   categories,
   dateFilter,
   searchQuery,
+  sortOption = "latest",
 }: NewsFeedProps) {
   const {
     news,
@@ -166,12 +160,25 @@ export default function NewsFeed({
           (item.content?.toLowerCase() || "").includes(
             searchQuery.toLowerCase()
           );
-
       return matchesSource && matchesCategory && matchesDate && matchesSearch;
     })
-    .sort(
-      (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
-    )
+    .sort((a, b) => {
+      // Get the full date objects for precise sorting
+      const dateA = new Date(a.pubDate);
+      const dateB = new Date(b.pubDate);
+
+      if (sortOption === "local-first") {
+        // First check if either item has Local category
+        const aIsLocal = a.categories?.includes("Local") || false;
+        const bIsLocal = b.categories?.includes("Local") || false;
+
+        if (aIsLocal !== bIsLocal) {
+          // If one is local and the other isn't, local comes first
+          return aIsLocal ? -1 : 1;
+        }
+      } // Default to sorting by date with precise time
+      return dateB.getTime() - dateA.getTime();
+    })
     // Ensure unique keys by adding index
     .map((item, index) => ({
       ...item,
@@ -188,6 +195,12 @@ export default function NewsFeed({
         </div>
       ) : (
         <>
+          {!loading && news.length > 0 && (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground/70">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Last updated {formatDate(new Date().toISOString())}</span>
+            </div>
+          )}
           {filteredAndSortedNews.length === 0 && (
             <div className="text-center text-muted-foreground">
               No news found for the selected filters.

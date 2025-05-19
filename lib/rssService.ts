@@ -1,6 +1,7 @@
 import { NewsItem, NewsCategory } from "@/types/news";
 import fetch from "node-fetch";
 import { XMLParser } from "fast-xml-parser";
+import { categorizeText } from "./categoryMatcher";
 
 interface RSSItem {
   title?: string;
@@ -19,16 +20,6 @@ const parser = new XMLParser({
   isArray: (name) => ["item", "entry"].includes(name),
 });
 
-// Category keywords for classification
-const CATEGORY_KEYWORDS = {
-  Local: ["fiji", "suva", "nadi", "local", "community", "pacific"],
-  Technology: ["technology", "digital", "internet", "cyber", "tech", "online"],
-  Business: ["business", "economy", "market", "trade", "finance", "company"],
-  Health: ["health", "medical", "hospital", "disease", "healthcare", "covid"],
-  World: ["world", "international", "global", "foreign", "overseas"],
-  Sports: ["sports", "rugby", "football", "cricket", "athletics", "olympics"],
-};
-
 export const RSS_SOURCES = [
   "https://fbcnews.com.fj/feed/",
   "https://fijisun.com.fj/feed/",
@@ -39,23 +30,7 @@ export const RSS_SOURCES = [
 ];
 
 function categorizeNews(title: string, content: string): NewsCategory[] {
-  const categories = new Set<NewsCategory>();
-  const textToCheck = `${title} ${content}`.toLowerCase();
-
-  Object.entries(CATEGORY_KEYWORDS).forEach(([category, keywords]) => {
-    if (
-      keywords.some((keyword) => textToCheck.includes(keyword.toLowerCase()))
-    ) {
-      categories.add(category as NewsCategory);
-    }
-  });
-
-  // Always ensure at least one category
-  if (categories.size === 0) {
-    categories.add("Local");
-  }
-
-  return Array.from(categories);
+  return categorizeText(title, content);
 }
 
 // Keep track of failed feeds and their retry counts
@@ -135,11 +110,10 @@ export async function fetchSingleFeed(
         pubDate.getMonth(),
         pubDate.getDate()
       );
-
       return {
         title,
         link: item.link || "",
-        pubDate: dateOnly.toISOString().split("T")[0],
+        pubDate: pubDate.toISOString(),
         content,
         source: new URL(source).hostname.replace(/^www\./, ""),
         guid: item.guid || `${source}-${title}`,

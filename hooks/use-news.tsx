@@ -9,14 +9,30 @@ export function useNews() {
   const [loadedSources, setLoadedSources] = useState<Set<string>>(new Set());
   const previousSourcesRef = useRef<Set<string>>(new Set());
 
+  const isValidNewsResponse = (
+    data: any
+  ): data is {
+    type: string;
+    items?: NewsItem[];
+    source?: string;
+  } => {
+    return (
+      typeof data === "object" &&
+      data !== null &&
+      typeof data.type === "string" &&
+      (data.type === "start" ||
+        (data.type === "chunk" &&
+          Array.isArray(data.items) &&
+          typeof data.source === "string"))
+    );
+  };
+
   const fetchNews = useCallback(
     async (signal?: AbortSignal) => {
       if (retrying) return;
 
       try {
         setLoading(true);
-        // Don't clear news immediately to prevent flicker
-        const prevNews = news;
         const prevSources = new Set(loadedSources);
         previousSourcesRef.current = prevSources;
 
@@ -35,29 +51,61 @@ export function useNews() {
 
         let newNews: NewsItem[] = [];
         let newLoadedSources = new Set<string>();
+        let buffer = ""; // Buffer for incomplete chunks
 
         while (true) {
           const { value, done } = await reader.read();
           if (done) break;
 
-          // Convert the chunk to text
+          // Convert the chunk to text and add to buffer
           const text = new TextDecoder().decode(value);
-          const lines = text.split("\n").filter(Boolean);
+          buffer += text;
+
+          // Split by newlines and process complete lines
+          const lines = buffer.split("\n");
+          // Keep the last incomplete line in the buffer
+          buffer = lines.pop() || "";
 
           for (const line of lines) {
+            if (!line.trim()) continue;
+
             try {
               const data = JSON.parse(line);
-              if (data.type === "chunk" && data.items?.length > 0) {
-                newNews.push(...data.items);
-                newLoadedSources.add(data.source);
+
+              if (!isValidNewsResponse(data)) {
+                console.warn("Invalid news response format:", data);
+                continue;
+              }
+
+              if (data.type === "chunk" && Array.isArray(data.items)) {
+                const validItems = data.items.filter(
+                  (item) =>
+                    item &&
+                    typeof item.title === "string" &&
+                    typeof item.source === "string" &&
+                    typeof item.pubDate === "string"
+                );
+
+                newNews.push(...validItems);
+                if (data.source) {
+                  newLoadedSources.add(data.source);
+                }
               }
             } catch (e) {
-              console.error("Error parsing news chunk:", e);
+              console.debug("Error parsing news chunk:", e);
+              // Continue processing other chunks
+              continue;
             }
           }
         }
 
-        setNews(newNews);
+        // Sort news by date before setting state
+        const sortedNews = newNews.sort(
+          (a, b) =>
+            new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
+        );
+
+        setNews(sortedNews);
         setLoadedSources(newLoadedSources);
         setError(null);
       } catch (err) {
@@ -85,7 +133,7 @@ export function useNews() {
         setLoading(false);
       }
     },
-    [news, retrying, loadedSources]
+    [retrying, loadedSources]
   );
 
   const refetch = useCallback(() => {

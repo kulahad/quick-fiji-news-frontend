@@ -1,8 +1,26 @@
 export function stripHtml(html: string) {
-  // Create a temporary div element
-  const doc = new DOMParser().parseFromString(html, "text/html");
+  if (!html) return "";
+
+  // Remove JSON-LD scripts and other script tags
+  const withoutScripts = html.replace(
+    /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+    ""
+  );
+
+  // Remove any remaining JSON-like content that might be part of the text
+  const withoutJsonLd = withoutScripts.replace(
+    /\{[\s\S]*?"@context"[\s\S]*?\}/g,
+    ""
+  );
+
+  // Create a temporary element and parse remaining HTML
+  const doc = new DOMParser().parseFromString(withoutJsonLd, "text/html");
+
   // Get the text content
-  return doc.body.textContent || "";
+  const text = doc.body.textContent || "";
+
+  // Clean up extra whitespace
+  return text.replace(/\s+/g, " ").trim();
 }
 
 export function truncateText(text: string, maxLength: number = 200) {

@@ -1,5 +1,6 @@
 export type NewsCategory =
   | "Local"
+  | "Politics"
   | "Technology"
   | "Business"
   | "Health"
