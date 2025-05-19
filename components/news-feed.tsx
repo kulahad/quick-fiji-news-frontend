@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Clock, ExternalLink, Loader2, CheckCircle2 } from "lucide-react";
 import { SOURCES } from "./news-filters";
 import { Button } from "@/components/ui/button";
@@ -93,7 +93,15 @@ export default function NewsFeed({
   dateFilter,
   searchQuery,
 }: NewsFeedProps) {
-  const { news, loading, error, refetch, loadedSources } = useNews();
+  const {
+    news,
+    loading,
+    error,
+    refetch,
+    loadedSources,
+    previousLoadedSources,
+  } = useNews();
+  const toastShownRef = useRef<boolean>(false);
 
   // Periodically refetch to get any retry results
   useEffect(() => {
@@ -104,29 +112,33 @@ export default function NewsFeed({
     return () => clearInterval(interval);
   }, [refetch]);
 
-  // Show error via toast
+  // Show error via toast once
   useEffect(() => {
-    if (error) {
+    if (error && !toastShownRef.current) {
       toast.error("Unable to load the latest news", {
         description:
           "Please try refreshing the page or check your internet connection.",
       });
+      toastShownRef.current = true;
+    } else if (!error) {
+      toastShownRef.current = false;
     }
   }, [error]);
+
   // Show source loading status via toast
   useEffect(() => {
-    if (loading) {
-      const newlyLoadedSources = sources.filter((source) =>
-        loadedSources.includes(source)
+    const newlyLoadedSources = loadedSources.filter(
+      (source) =>
+        !previousLoadedSources.includes(source) && sources.includes(source)
+    );
+
+    if (newlyLoadedSources.length > 0) {
+      toast.success(
+        `Loaded news from ${newlyLoadedSources.map(formatSource).join(", ")}`,
+        { duration: 3000 }
       );
-      if (newlyLoadedSources.length > 0) {
-        toast.success(
-          `Loaded news from ${newlyLoadedSources.map(formatSource).join(", ")}`,
-          { duration: 3000 }
-        );
-      }
     }
-  }, [loading, loadedSources, sources]);
+  }, [loadedSources, previousLoadedSources, sources]);
 
   const filteredAndSortedNews = news
     .filter((item) => {
@@ -159,7 +171,13 @@ export default function NewsFeed({
     })
     .sort(
       (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
-    ); // This useEffect is already defined above, remove this duplicate
+    )
+    // Ensure unique keys by adding index
+    .map((item, index) => ({
+      ...item,
+      uniqueId: `${item.guid}-${item.source}-${index}`.replace(/\s+/g, "-"),
+    }));
+
   return (
     <div className="space-y-8">
       <Toaster />
@@ -177,7 +195,7 @@ export default function NewsFeed({
           )}
           {filteredAndSortedNews.map((item) => (
             <article
-              key={item.guid}
+              key={item.uniqueId}
               className="group flex flex-col space-y-4 p-4 rounded-lg border border-transparent hover:border-border hover:bg-muted/50 transition-all duration-200 hover:shadow-sm"
             >
               <div className="space-y-2">
@@ -214,7 +232,11 @@ export default function NewsFeed({
                       <Separator orientation="vertical" className="h-4" />{" "}
                       <div className="flex flex-wrap gap-1.5">
                         {(item.categories || []).map((category, index) => {
-                          const key = `${item.guid}-${category}-${index}`;
+                          const key =
+                            `${item.uniqueId}-${category}-${index}`.replace(
+                              /\s+/g,
+                              "-"
+                            );
                           return (
                             <Badge
                               key={key}

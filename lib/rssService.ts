@@ -35,7 +35,7 @@ export const RSS_SOURCES = [
   "https://islandsbusiness.com/feed/",
   "https://fijilive.com/feed/",
   "https://fijionenews.com.fj/feed/",
-  "https://fijitimes.com.fj/feed/",
+  "https://www.fijitimes.com/feed/", // Added www and using HTTPS
 ];
 
 function categorizeNews(title: string, content: string): NewsCategory[] {
@@ -83,7 +83,9 @@ export async function fetchSingleFeed(
 
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    // Longer timeout for Fiji Times due to slower response times
+    const timeout = source.includes("fijitimes.com.fj") ? 30000 : 10000;
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
 
     const response = await fetch(source, {
       headers: {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { NewsItem } from "@/types/news";
 
 export function useNews() {
@@ -7,110 +7,97 @@ export function useNews() {
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
   const [loadedSources, setLoadedSources] = useState<Set<string>>(new Set());
+  const previousSourcesRef = useRef<Set<string>>(new Set());
 
-  const fetchNews = async (signal?: AbortSignal) => {
-    if (retrying) return;
+  const fetchNews = useCallback(
+    async (signal?: AbortSignal) => {
+      if (retrying) return;
 
-    try {
-      setNews([]); // Reset news state
-      setLoading(true);
-      setLoadedSources(new Set());
+      try {
+        setLoading(true);
+        // Don't clear news immediately to prevent flicker
+        const prevNews = news;
+        const prevSources = new Set(loadedSources);
+        previousSourcesRef.current = prevSources;
 
-      const response = await fetch("/api/news-stream", {
-        signal,
-      });
+        const response = await fetch("/api/news-stream", {
+          signal,
+        });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error("No reader available");
-      }
+        const reader = response.body?.getReader();
+        if (!reader) {
+          throw new Error("No reader available");
+        }
 
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
+        let newNews: NewsItem[] = [];
+        let newLoadedSources = new Set<string>();
 
-        // Convert the chunk to text
-        const chunk = new TextDecoder().decode(value);
-        const lines = chunk.split("\n").filter(Boolean);
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
 
-        for (const line of lines) {
-          const data = JSON.parse(line);
+          // Convert the chunk to text
+          const text = new TextDecoder().decode(value);
+          const lines = text.split("\n").filter(Boolean);
 
-          switch (data.type) {
-            case "start":
-              break;
-
-            case "chunk":
-              setNews((current) => {
-                const newNews = [...current, ...data.items];
-                // Sort by date
-                return newNews.sort(
-                  (a, b) =>
-                    new Date(b.pubDate).getTime() -
-                    new Date(a.pubDate).getTime()
-                );
-              });
-              setLoadedSources((current) => new Set([...current, data.source]));
-              break;
-
-            case "error":
-              console.error(`Error loading ${data.source}:`, data.error);
-              break;
-
-            case "end":
-              setLoading(false);
-              break;
+          for (const line of lines) {
+            try {
+              const data = JSON.parse(line);
+              if (data.type === "chunk" && data.items?.length > 0) {
+                newNews.push(...data.items);
+                newLoadedSources.add(data.source);
+              }
+            } catch (e) {
+              console.error("Error parsing news chunk:", e);
+            }
           }
         }
-      }
-    } catch (err) {
-      if (err instanceof Error && err.name === "AbortError") {
-        return;
-      } // Convert technical errors to user-friendly messages
-      if (err instanceof Error) {
-        if (err.name === "SyntaxError") {
-          setError(
-            "Unable to process the news feed data. Our team has been notified."
-          );
-        } else if (err.name === "TypeError") {
-          setError(
-            "Unable to connect to the news service. Please check your internet connection."
-          );
+
+        setNews(newNews);
+        setLoadedSources(newLoadedSources);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching news:", err);
+        if (err instanceof Error) {
+          if (err.name === "SyntaxError") {
+            setError(
+              "Unable to process the news feed data. Our team has been notified."
+            );
+          } else if (err.name === "TypeError") {
+            setError(
+              "Unable to connect to the news service. Please check your internet connection."
+            );
+          } else {
+            setError(
+              "We're having trouble loading the news. Please try again in a few minutes."
+            );
+          }
         } else {
           setError(
-            "We're having trouble loading the news. Please try again in a few minutes."
+            "Unable to load the news feed. Please try refreshing the page."
           );
         }
-      } else {
-        setError(
-          "Unable to load the news feed. Please try refreshing the page."
-        );
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    }
-  };
+    },
+    [news, retrying, loadedSources]
+  );
 
-  const refetch = async () => {
+  const refetch = useCallback(() => {
     setRetrying(true);
-    try {
-      await fetchNews();
-    } finally {
-      setRetrying(false);
-    }
-  };
+    fetchNews().finally(() => setRetrying(false));
+  }, [fetchNews]);
 
   useEffect(() => {
     const abortController = new AbortController();
     fetchNews(abortController.signal);
-
-    return () => {
-      abortController.abort();
-    };
-  }, []);
+    return () => abortController.abort();
+  }, [fetchNews]);
 
   return {
     news,
@@ -118,5 +105,6 @@ export function useNews() {
     error,
     refetch,
     loadedSources: Array.from(loadedSources),
+    previousLoadedSources: Array.from(previousSourcesRef.current),
   };
 }
