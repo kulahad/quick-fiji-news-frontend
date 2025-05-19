@@ -118,8 +118,7 @@ export default function NewsFeed({
       toastShownRef.current = false;
     }
   }, [error]);
-
-  // Show source loading status via toast
+  // Show source loading status
   useEffect(() => {
     const newlyLoadedSources = loadedSources.filter(
       (source) =>
@@ -127,10 +126,14 @@ export default function NewsFeed({
     );
 
     if (newlyLoadedSources.length > 0) {
-      toast.success(
-        `Loaded news from ${newlyLoadedSources.map(formatSource).join(", ")}`,
-        { duration: 3000 }
-      );
+      // Only show toast if all sources are loaded
+      if (loadedSources.length === sources.length) {
+        toast.success(`Updated news feed`, {
+          duration: 2000,
+          position: "bottom-right",
+          className: "bg-muted/80",
+        });
+      }
     }
   }, [loadedSources, previousLoadedSources, sources]);
 
@@ -187,7 +190,7 @@ export default function NewsFeed({
 
   return (
     <div className="space-y-8">
-      <Toaster />
+      <Toaster />{" "}
       {loading && news.length === 0 ? (
         <div className="flex flex-col items-center justify-center min-h-[200px]">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -195,12 +198,20 @@ export default function NewsFeed({
         </div>
       ) : (
         <>
-          {!loading && news.length > 0 && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground/70">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Last updated {formatDate(new Date().toISOString())}</span>
-            </div>
-          )}
+          <div className="flex items-center justify-between">
+            {!loading && news.length > 0 && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground/70">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Last updated {formatDate(new Date().toISOString())}</span>
+              </div>
+            )}
+            {loading && news.length > 0 && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground/50 ml-auto">
+                <Loader2 className="w-3 h-3 animate-spin" />
+                <span>Refreshing...</span>
+              </div>
+            )}
+          </div>
           {filteredAndSortedNews.length === 0 && (
             <div className="text-center text-muted-foreground">
               No news found for the selected filters.
