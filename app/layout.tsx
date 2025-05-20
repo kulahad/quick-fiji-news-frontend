@@ -4,6 +4,7 @@ import { Playfair_Display, Merriweather } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { Analytics } from "@vercel/analytics/react";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -43,6 +44,7 @@ export default function RootLayout({
           {" "}
           {children}
           <Toaster />
+          <Analytics />
         </ThemeProvider>
       </body>
     </html>
