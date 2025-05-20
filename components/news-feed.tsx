@@ -9,6 +9,7 @@ import { stripHtml, truncateText, formatVolumeInfo } from "../lib/textUtils";
 import { NewsCategory, NewsItem } from "@/types/news";
 import { Toaster, toast } from "sonner";
 import { formatDate } from "../lib/dateUtils";
+import Link from "next/link";
 
 // Helper function to normalize domain
 function normalizeDomain(domain: string): string {
@@ -296,8 +297,7 @@ export default function NewsFeed({
                 </Button>
               </div>
             </article>
-          ))}
-
+          ))}{" "}
           {loading && (
             <div className="flex justify-center py-4">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
