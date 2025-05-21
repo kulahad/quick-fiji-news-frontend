@@ -174,27 +174,6 @@ export function NewsFilters({
             </div>
           </AccordionContent>
         </AccordionItem>
-        <AccordionItem value="date" className="border-b-0">
-          <AccordionTrigger className="font-heading py-2 hover:no-underline">
-            Date
-          </AccordionTrigger>
-          <AccordionContent className="pt-1 pb-2">
-            <div className="space-y-4">
-              <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger className="border-black dark:border-gray-800">
-                  <SelectValue placeholder="Select timeframe" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Time</SelectItem>
-                  <SelectItem value="today">Today</SelectItem>
-                  <SelectItem value="this-week">This Week</SelectItem>
-                  <SelectItem value="this-month">This Month</SelectItem>
-                  <SelectItem value="this-year">This Year</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>{" "}
-          </AccordionContent>
-        </AccordionItem>
       </Accordion>
       <Separator className="bg-black/20 dark:bg-white/20" />
       {/* Attribution */}

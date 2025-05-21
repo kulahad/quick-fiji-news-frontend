@@ -26,31 +26,6 @@ function formatSource(source: string): string {
   return sourceInfo ? sourceInfo.label : domain;
 }
 
-// Helper function to check if a date matches the filter
-function isWithinDate(pubDate: string, dateFilter: string): boolean {
-  const now = new Date();
-  const date = new Date(pubDate);
-  switch (dateFilter) {
-    case "today":
-      return date.toDateString() === now.toDateString();
-    case "this-week": {
-      const weekAgo = new Date(now);
-      weekAgo.setDate(now.getDate() - 7);
-      return date >= weekAgo && date <= now;
-    }
-    case "this-month": {
-      return (
-        date.getFullYear() === now.getFullYear() &&
-        date.getMonth() === now.getMonth()
-      );
-    }
-    case "this-year":
-      return date.getFullYear() === now.getFullYear();
-    default:
-      return true;
-  }
-}
-
 // Helper function to get badge style based on category
 function getBadgeStyle(category: string): string {
   switch (category) {
@@ -76,7 +51,6 @@ type SortOption = "latest" | "local-first";
 interface NewsFeedProps {
   sources: string[];
   categories: NewsCategory[];
-  dateFilter: string;
   searchQuery: string;
   sortOption?: SortOption;
 }
@@ -84,7 +58,6 @@ interface NewsFeedProps {
 export default function NewsFeed({
   sources,
   categories,
-  dateFilter,
   searchQuery,
   sortOption = "latest",
 }: NewsFeedProps) {
@@ -152,9 +125,6 @@ export default function NewsFeed({
             categories.includes(cat as NewsCategory)
           ));
 
-      // Date filtering
-      const matchesDate = isWithinDate(item.pubDate, dateFilter);
-
       // Search filtering
       const matchesSearch = !searchQuery
         ? true
@@ -164,7 +134,7 @@ export default function NewsFeed({
           (item.content?.toLowerCase() || "").includes(
             searchQuery.toLowerCase()
           );
-      return matchesSource && matchesCategory && matchesDate && matchesSearch;
+      return matchesSource && matchesCategory && matchesSearch;
     })
     .sort((a, b) => {
       // Get the full date objects for precise sorting
