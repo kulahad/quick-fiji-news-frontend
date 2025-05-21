@@ -200,3 +200,105 @@ export function categorizeText(title: string, content: string): NewsCategory[] {
     .slice(0, 2) // Limit to top 2 categories
     .map(([category]) => category);
 }
+
+export function categorizeFromRssCategories(
+  rssCategories: string[]
+): NewsCategory[] {
+  const matchedCategories: NewsCategory[] = [];
+  const processedCategories = new Set<NewsCategory>();
+
+  const categoryMap: Record<string, NewsCategory | null> = {
+    // Allow null for special handling
+    News: "Local", // Default mapping for generic 'News'
+    "Local News": "Local", // Mapping for 'Local News'
+    Politics: "Politics", // Mapping for 'Politics'
+    Technology: "Technology", // Mapping for 'Technology'
+    Business: "Business", // Mapping for 'Business'
+    Economy: "Business", // Mapping for 'Economy'
+    Health: "Health", // Mapping for 'Health'
+    Medical: "Health", // Mapping for 'Medical'
+    World: "World", // Mapping for 'World'
+    International: "World", // Mapping for 'International'
+    Sports: "Sports", // Mapping for 'Sports'
+    Rugby: "Sports", // Mapping for 'Rugby'
+    Football: "Sports", // Mapping for 'Football'
+    Cricket: "Sports", // Mapping for 'Cricket'
+    Entertainment: null, // Special handling for 'Entertainment'
+    // Add more specific mappings if needed based on common RSS categories
+  };
+
+  let entertainmentPresentInRss = false;
+
+  // First pass: Check for direct mappings and presence of 'Entertainment' in original RSS categories
+  for (const rssCategory of rssCategories) {
+    if (typeof rssCategory !== "string") continue;
+
+    if (rssCategory === "Entertainment") {
+      entertainmentPresentInRss = true;
+      continue; // Skip direct mapping for Entertainment
+    }
+
+    const mappedCategory = categoryMap[rssCategory];
+    if (mappedCategory && !processedCategories.has(mappedCategory)) {
+      matchedCategories.push(mappedCategory);
+      processedCategories.add(mappedCategory);
+    }
+  }
+
+  // Handle Entertainment after the first pass
+  if (entertainmentPresentInRss) {
+    if (processedCategories.has("Local")) {
+      // If Local was a direct match, add Local (already added if it was a direct match, but for clarity)
+      if (!processedCategories.has("Local")) {
+        matchedCategories.push("Local");
+        processedCategories.add("Local");
+      }
+    } else {
+      // If Local was not a direct match, add World (if not already added)
+      if (!processedCategories.has("World")) {
+        matchedCategories.push("World");
+        processedCategories.add("World");
+      }
+    }
+  }
+
+  // If direct matches (including conditional Entertainment) were found, return them.
+  if (matchedCategories.length > 0) {
+    return matchedCategories;
+  }
+
+  // Second pass: If no direct matches, check against CATEGORY_RULES keywords as a fallback
+  for (const rssCategory of rssCategories) {
+    if (typeof rssCategory !== "string") continue;
+    const normalizedRssCategory = rssCategory.toLowerCase();
+    for (const appCategory in CATEGORY_RULES) {
+      const rule = CATEGORY_RULES[appCategory as Exclude<NewsCategory, "All">];
+      if (
+        rule.keywords.some((keyword) =>
+          normalizedRssCategory.includes(keyword.toLowerCase())
+        ) &&
+        !processedCategories.has(appCategory as NewsCategory)
+      ) {
+        matchedCategories.push(appCategory as NewsCategory);
+        processedCategories.add(appCategory as NewsCategory);
+        // If a keyword match is found, no need to check other keywords for this rssCategory
+        break;
+      }
+    }
+  }
+
+  // If no categories matched through either method, default to Local if any RSS category contains "Fiji" or related terms
+  if (
+    matchedCategories.length === 0 &&
+    rssCategories.some(
+      (cat) =>
+        typeof cat === "string" && // Added check
+        (cat.toLowerCase().includes("fiji") ||
+          cat.toLowerCase().includes("pacific"))
+    )
+  ) {
+    return ["Local"];
+  }
+
+  return matchedCategories;
+}

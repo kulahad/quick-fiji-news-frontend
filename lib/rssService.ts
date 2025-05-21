@@ -1,7 +1,7 @@
 import { NewsItem, NewsCategory } from "@/types/news";
 import fetch from "node-fetch";
 import { XMLParser } from "fast-xml-parser";
-import { categorizeText } from "./categoryMatcher";
+import { categorizeText, categorizeFromRssCategories } from "./categoryMatcher";
 import { decode } from "html-entities";
 
 interface RSSItem {
@@ -12,13 +12,14 @@ interface RSSItem {
   content?: string;
   "content:encoded"?: string;
   guid?: string;
+  category?: string[]; // Added to capture RSS categories
 }
 
 const parser = new XMLParser({
   ignoreAttributes: false,
   attributeNamePrefix: "_",
   textNodeName: "text",
-  isArray: (name) => ["item", "entry"].includes(name),
+  isArray: (name) => ["item", "entry", "category"].includes(name),
 });
 
 export const RSS_SOURCES = [
@@ -119,7 +120,7 @@ export async function fetchSingleFeed(
         content,
         source: new URL(source).hostname.replace(/^www\./, ""),
         guid: item.guid || `${source}-${title}`,
-        categories: categorizeNews(title, content),
+        categories: categorizeFromRssCategories(item.category || []),
         volume: volumeInfo,
       };
     });
