@@ -37,12 +37,25 @@ export const CATEGORY_RULES: Record<
     ],
   },
   Politics: {
-    keywords: ["parliament", "minister", "government", "policy", "election"],
+    keywords: [
+      "parliament",
+      "minister",
+      "government",
+      "policy",
+      "election",
+      "opposition",
+      "bill",
+      "law",
+      "legislation",
+      "cabinet",
+      "politics",
+    ],
     weight: 0.8,
     requireMultipleMatches: true,
     contextPatterns: [
-      /\b(?:prime minister|attorney general|opposition|parliament)\b/i,
-      /\b(?:bill|law|legislation|policy|cabinet)\s+(?:passes|announces|debates|discusses)\b/i,
+      /\b(?:prime minister|attorney general|opposition leader|member of parliament)\b/i,
+      /\b(?:political party|government policy|election campaign|parliamentary debate)\b/i,
+      /\b(?:passes bill|enacts law|introduces legislation)\b/i,
     ],
   },
   Technology: {
