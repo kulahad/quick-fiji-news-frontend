@@ -42,7 +42,7 @@ export const SOURCES = [
   },
   { id: "fijilive", label: "Fiji Live", value: "fijilive.com" },
   { id: "fijionenews", label: "Fiji One News", value: "fijionenews.com.fj" },
-  { id: "fijitimes", label: "Fiji Times", value: "fijitimes.com.fj" },
+  { id: "fijitimes", label: "Fiji Times", value: "www.fijitimes.com.fj" },
 ] as const;
 
 const CATEGORIES: NewsCategory[] = [
