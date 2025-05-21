@@ -5,7 +5,7 @@ import NewsContainer from "@/components/news-container";
 import { calculateVolumeInfo } from "@/lib/textUtils";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 300;
 
 export default function Home() {
   // Get current date in newspaper format
