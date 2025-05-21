@@ -14,8 +14,8 @@ export async function GET() {
           encoder.encode(JSON.stringify({ type: "start" }) + "\n")
         );
 
-        // Process each source sequentially
-        for (const source of RSS_SOURCES) {
+        // Create an array of promises for parallel fetching
+        const fetchPromises = RSS_SOURCES.map(async (source) => {
           try {
             const items = await fetchSingleFeed(source);
             if (items && items.length > 0) {
@@ -46,12 +46,11 @@ export async function GET() {
                 }) + "\n"
               )
             );
-            continue;
           }
+        });
 
-          // Small delay between sources to prevent overwhelming the client
-          await new Promise((resolve) => setTimeout(resolve, 100));
-        }
+        // Wait for all fetches to complete
+        await Promise.all(fetchPromises);
       } catch (error) {
         console.error("Stream error:", error);
         controller.error(error);

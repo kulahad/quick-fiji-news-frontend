@@ -6,8 +6,32 @@ import { NewsItem } from "@/types/news";
 export const dynamic = "force-dynamic";
 export const revalidate = 300; // 5 minutes
 
+// Simple in-memory cache
+let cachedNews: NewsItem[] | null = null;
+let cacheTimestamp: number = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+
 export async function GET() {
   try {
+    // Check if cached data is valid
+    if (cachedNews && Date.now() - cacheTimestamp < CACHE_DURATION) {
+      console.log("Returning cached news");
+      return new NextResponse(
+        JSON.stringify({
+          items: cachedNews,
+          sourcesCount: RSS_SOURCES.length,
+          totalItems: cachedNews.length,
+        }),
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "public, max-age=300", // Cache for 5 minutes
+          },
+        }
+      );
+    }
+
+    console.log("Fetching fresh news");
     const allNews: NewsItem[] = [];
 
     // Create an array of promises for parallel fetching
@@ -48,7 +72,7 @@ export async function GET() {
       {
         headers: {
           "Content-Type": "application/json",
-          "Cache-Control": "private, no-cache, no-store, must-revalidate",
+          "Cache-Control": "public, max-age=300", // Cache for 5 minutes
         },
       }
     );

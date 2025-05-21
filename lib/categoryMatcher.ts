@@ -194,8 +194,9 @@ export function categorizeText(title: string, content: string): NewsCategory[] {
     return ["Local"];
   }
 
-  // Sort by score and take top categories
+  // Sort by score and take top 2 categories
   return Array.from(scores.entries())
     .sort(([, a], [, b]) => b - a)
+    .slice(0, 2) // Limit to top 2 categories
     .map(([category]) => category);
 }
