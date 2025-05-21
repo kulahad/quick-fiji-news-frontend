@@ -2,6 +2,7 @@ import { NewsItem, NewsCategory } from "@/types/news";
 import fetch from "node-fetch";
 import { XMLParser } from "fast-xml-parser";
 import { categorizeText } from "./categoryMatcher";
+import { decode } from "html-entities";
 
 interface RSSItem {
   title?: string;
@@ -88,7 +89,7 @@ export async function fetchSingleFeed(
     return items.map((item: RSSItem) => {
       const content =
         item.content || item["content:encoded"] || item.description || "";
-      const title = item.title || "";
+      const title = decode(item.title || "");
       const pubDate = item.pubDate ? new Date(item.pubDate) : new Date();
 
       const startOfMonth = new Date(

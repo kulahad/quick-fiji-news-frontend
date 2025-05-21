@@ -29,6 +29,13 @@ export const CATEGORY_RULES: Record<
       "charged",
     ],
     weight: 1,
+    excludeIfContains: [
+      "international",
+      "global",
+      "foreign",
+      "overseas",
+      "worldwide",
+    ],
     contextPatterns: [
       /\b(?:in|at|from|near)\s+(?:fiji|suva|nadi|lautoka|labasa)\b/i,
       /\bfijian?\s+(?:community|government|people|residents|police|court)\b/i,
@@ -51,7 +58,7 @@ export const CATEGORY_RULES: Record<
       "politics",
     ],
     weight: 0.8,
-    requireMultipleMatches: true,
+    // requireMultipleMatches: true, // Removed
     contextPatterns: [
       /\b(?:prime minister|attorney general|opposition leader|member of parliament)\b/i,
       /\b(?:political party|government policy|election campaign|parliamentary debate)\b/i,
@@ -69,7 +76,7 @@ export const CATEGORY_RULES: Record<
       "computer",
     ],
     weight: 0.7,
-    requireMultipleMatches: true,
+    // requireMultipleMatches: true, // Removed
     excludeIfContains: [
       "technician",
       "technical foul",
@@ -93,7 +100,7 @@ export const CATEGORY_RULES: Record<
       "investment",
     ],
     weight: 0.7,
-    requireMultipleMatches: true,
+    // requireMultipleMatches: true, // Removed
     contextPatterns: [
       /\b(?:million|billion)\s+(?:dollars|FJD)\b/i,
       /\b(?:company|business|firm)\s+(?:announces|reports|launches)\b/i,
@@ -176,8 +183,8 @@ export function categorizeText(title: string, content: string): NewsCategory[] {
 
     // Calculate score based on matches and weight
     const score = (keywordMatches + contextMatches * 1.5) * rule.weight;
-    if (score > 0.5) {
-      // Threshold for category inclusion
+    if (score > 0.6) {
+      // Increased threshold for category inclusion
       scores.set(categoryName, score);
     }
   });
