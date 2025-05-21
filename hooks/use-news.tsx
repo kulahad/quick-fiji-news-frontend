@@ -145,7 +145,7 @@ export function useNews() {
     const abortController = new AbortController();
     fetchNews(abortController.signal);
     return () => abortController.abort();
-  }, [fetchNews]);
+  }, []);
 
   return {
     news,
