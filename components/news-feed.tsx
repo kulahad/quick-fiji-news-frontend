@@ -102,7 +102,7 @@ export default function NewsFeed({
   useEffect(() => {
     const interval = setInterval(() => {
       refetch();
-    }, 45000); // Check every 45 seconds for new content
+    }, 300000); // Check every 5 mins for new content
 
     return () => clearInterval(interval);
   }, [refetch]);
