@@ -1,15 +1,25 @@
-import { Suspense } from "react";
+"use client";
+
+import { Suspense, useState, useEffect } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ThemeToggle } from "@/components/theme-toggle";
 import NewsContainer from "@/components/news-container";
 import { calculateVolumeInfo } from "@/lib/textUtils";
 
 export const dynamic = "force-dynamic";
-export const revalidate = 300;
 
 export default function Home() {
+  const [today, setToday] = useState(new Date());
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setToday(new Date());
+    }, 1000); // Update every second
+
+    return () => clearInterval(intervalId); // Clean up the interval on component unmount
+  }, []);
+
   // Get current date in newspaper format
-  const today = new Date();
   const options: Intl.DateTimeFormatOptions = {
     weekday: "long",
     year: "numeric",
